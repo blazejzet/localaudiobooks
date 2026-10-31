@@ -1,66 +1,41 @@
-# Literavox (clean rewrite)
-
-A from-scratch SwiftUI reimplementation of Literavox / LocalAudioBooksPlayer, built to
-[`../requirements.md`](../requirements.md). This replaces the legacy app's dual model
-generations, global singletons, fragile equality, and third-party dependencies with a
-single domain model, dependency-injected `@Observable` services, and native frameworks
-only.
-
-## Requirements
-
-- **Xcode 16+** (the project uses the file-system *synchronized group* format — any file
-  added under `Literavox/` is compiled automatically, no `.pbxproj` editing needed).
-- **iOS 17+** deployment target (SwiftUI `@Observable`, StoreKit 2, async AVFoundation).
-- Set your **Signing team** and, if you like, the **bundle id** (`pl.asuri.literavox`)
-  in the target's Signing & Capabilities tab before running on device.
-
-## Architecture
-
-```
-Literavox/
-  App/          LiteravoxApp (@main) · AppModel (composition root / DI)
-  Domain/       Library · Book · Track · Bookmark · UserState · palette · StableID
-  Persistence/  AppSettings (UserDefaults) · LibraryStore · UserStateStore · JSONFileStore
-  Services/     LibraryService · LibraryScanner (actor) · ICloudFiles ·
-                AudioFileMetadata · DurationCache · GoogleBooks ·
-                SecurityScopedAccess · NetworkMonitor
-  Playback/     AudioPlayer (engine) · AudioSessionController · NowPlayingController · PlaybackSpeed
-  Features/     Onboarding · Home (filter strip, continue-listening, list, mini player) ·
-                Player (track list, scrubber, speed, bookmarks) · Library (list/add/adding books)
-  Resources/    en.lproj / pl.lproj Localizable.strings
-```
-
-Services are created once in `AppModel` and injected through the SwiftUI environment —
-no singletons. The filesystem folder is the source of truth for *content*; per-book user
-flags (favourite / finished / resume / bookmarks) live in `UserStateStore`.
-
-## What's implemented (Phase 1 + the prioritised Phase 2 items)
-
-- Library add / configure (icon + colour) / list / delete (files untouched) / reload, via
-  native `.fileImporter` and security-scoped bookmarks; open-folder-in-Files.
-- Folder scanning with `json.json` catalogue + `.info` duration sidecars; metadata resolved
-  `info.txt → ID3 (via AVFoundation) → Google Books`, written back for fast offline rescans.
-  Natural (numeric-aware) track sort; stable composite IDs.
-- AVPlayer engine: resume, ±30 s, next/prev, variable speed, auto-advance, progress saved
-  every ~5 s; Now Playing + lock-screen remote commands; background audio; audio-session
-  interruptions; next-track iCloud prefetch.
-- Home, full player, mini player, continue-listening card, onboarding.
-- Favourite / finished flags + filters; in-track bookmarks (slider menu + jump); per-track
-  iCloud state icons + on-demand download; EN/PL localization.
-
-## Deliberately deferred (spec Phases 3–4)
-
-- ZIP import pipeline (`UTType.archive` + unzip) — Phase 3.
-- StoreKit 2 tip/unlock — Phase 3 (no secret in client; on-device verification when added).
-- Cloud-provider sync beyond shared iCloud Drive folders — Phase 4 (recommended *cut*).
-
-## Notes / caveats
-
-- This was authored without a local build (no Xcode on the authoring machine). The
-  structure compiles by inspection, but expect to resolve a small number of minor compiler
-  diagnostics on first build.
-- The app icon set is an empty placeholder — drop a 1024×1024 PNG into
-  `Assets.xcassets/AppIcon.appiconset` before submitting.
-- If Polish strings don't appear, confirm `Resources/en.lproj` and `pl.lproj` are picked up
-  as localizations in the target (Xcode 16 synchronized groups normally handle `.lproj`).
-# literavox2
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Local Audio Books — your audiobooks and free classics in 8 languages</title>
+<meta name="description" content="A private audiobook player for your own MP3 files, with free public-domain audiobooks from LibriVox, Wolne Lektury and Project Gutenberg in eight languages — plus any podcast or RSS feed.">
+<link rel="canonical" href="https://localaudiobooks.vercel.app/">
+<link rel="alternate" hreflang="en" href="https://localaudiobooks.vercel.app/">
+<link rel="alternate" hreflang="pl" href="https://localaudiobooks.vercel.app/pl/">
+<meta property="og:title" content="Local Audio Books — your audiobooks and free classics in 8 languages">
+<meta property="og:description" content="A private audiobook player for your own MP3 files, with free public-domain audiobooks from LibriVox, Wolne Lektury and Project Gutenberg in eight languages — plus any podcast or RSS feed.">
+<meta property="og:image" content="https://localaudiobooks.vercel.app/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="apple-itunes-app" content="app-id=6737989765">
+<link rel="icon" href="/assets/icon-64.png">
+<link rel="apple-touch-icon" href="/assets/icon-180.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="brand" href="/"><img src="/assets/icon-64.png" alt=""><span>Local Audio Books</span></a>
+<nav><a class="hide-sm" href="/#sources">Sources</a><a class="hide-sm" href="/#feeds">Feeds</a><a href="/privacy">Privacy</a><a href="/support">Support</a><a class="lang" href="/pl" hreflang="pl">PL</a></nav>
+</div></header>
+<main>
+<div class="hero"><div class="wrap">
+<div><div class="kicker">Audiobook player for iPhone, iPad and iPhone Duo</div><h1>Your audiobooks.<br>Free classics in eight languages.</h1><p class="lead">Play the MP3 audiobooks you already own — or download thousands of free, legal titles from LibriVox, Wolne Lektury and Project Gutenberg. No account, no ads, no tracking.</p>
+<a class="cta" href="https://apps.apple.com/app/id6737989765"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.4.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 4.9c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.1.1 2.3-.6 3-1.5z"/></svg>Download on the App Store</a><span class="cta-small">Free · iOS 17 or later</span></div>
+<img class="hero-shot" src="/assets/shots/en-iphone-player.png" alt="Player">
+</div></div>
+<section id="sources"><div class="wrap"><h2>Free catalogues, in your language</h2><p class="sub">Add a catalogue, browse it, download a title. It becomes an ordinary audiobook on your device — offline, with author, narrator, source and license recorded.</p><div class="grid"><div class="card"><div class="l">English</div><h3>LibriVox</h3><p>Volunteer readings of public-domain books</p><div class="n">19 000+ <small>titles</small></div></div><div class="card"><div class="l">Polski</div><h3>Wolne Lektury</h3><p>Polish classics read by actors · CC BY-SA</p><div class="n">1 500+ <small>titles</small></div></div><div class="card"><div class="l">Deutsch</div><h3>LibriVox Deutsch</h3><p>Grimm, Kafka, Hoffmann, Karl May…</p><div class="n">850 <small>titles</small></div></div><div class="card"><div class="l">Español</div><h3>LibriVox Español</h3><p>Cervantes, Alarcón, Aesop…</p><div class="n">560 <small>titles</small></div></div><div class="card"><div class="l">Français</div><h3>LibriVox Français</h3><p>Verne, Dumas, Hugo, Perrault…</p><div class="n">310 <small>titles</small></div></div><div class="card"><div class="l">Nederlands</div><h3>LibriVox Nederlands</h3><p>Couperus, Grimm, Verne…</p><div class="n">210 <small>titles</small></div></div><div class="card"><div class="l">Português</div><h3>LibriVox Português</h3><p>Machado de Assis, Camões…</p><div class="n">100+ <small>titles</small></div></div><div class="card"><div class="l">Italiano</div><h3>LibriVox Italiano</h3><p>Collodi, Dante, Pirandello, Verga…</p><div class="n">90 <small>titles</small></div></div></div></div></section>
+<section id="feeds"><div class="wrap split"><div><h2>Bring your own feeds</h2><p class="sub">Paste the address of any podcast or RSS feed — or of a web page that links to one, like a LibriVox book page. Each feed becomes an audiobook and its episodes the chapters, in listening order.</p><h2>Your folder is your library</h2><p class="sub">Point the app at a folder of audiobooks on your device or in iCloud Drive — one subfolder of MP3 or AAC files per book. Manage everything in Files or Finder; share iCloud folders with family.</p></div>
+<div class="shots"><img class="" src="/assets/shots/en-iphone-browse.png" alt="Catalogue" loading="lazy"><img class="" src="/assets/shots/en-iphone-home.png" alt="Library" loading="lazy"></div></div></section>
+<section id="screens"><div class="wrap"><h2>Made for every screen</h2><p class="sub">On iPad and the unfolded iPhone Duo your library becomes a grid of covers and the player puts cover and controls side by side. Folded, it is a focused one-hand player.</p>
+<div class="shots"><img class="wide" src="/assets/shots/en-ipad-home.png" alt="Library" loading="lazy"><img class="" src="/assets/shots/en-duo-player.png" alt="Player" loading="lazy"></div></div></section>
+<section><div class="wrap split"><div><h2>Built for long listens</h2><ul class="ticks"><li>Resume exactly where you stopped</li><li>30-second skips and variable speed</li><li>Chapter list and whole-book progress</li><li>Bookmarks, favourites and finished flags</li><li>Lock screen, headphones and CarPlay</li><li>Background playback</li></ul></div>
+<div><h2>Private by design</h2><p class="sub">The app collects no data. The network is used only to browse catalogues, download titles and fetch cover art.</p><a class="cta" href="https://apps.apple.com/app/id6737989765"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.4.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 4.9c.7-.9 1.2-2 1.1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.1.1 2.3-.6 3-1.5z"/></svg>Download on the App Store</a></div></div></section>
+</main>
+<footer><div class="wrap"><span>© 2026 Local Audio Books · Made in Poland. LibriVox recordings are in the public domain in the USA; Wolne Lektury titles are CC BY-SA.</span><span><a href="/privacy">Privacy</a> · <a href="/support">Support</a></span></div></footer>
+</body>
+</html>
