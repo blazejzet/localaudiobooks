@@ -1,0 +1,66 @@
+# Literavox (clean rewrite)
+
+A from-scratch SwiftUI reimplementation of Literavox / LocalAudioBooksPlayer, built to
+[`../requirements.md`](../requirements.md). This replaces the legacy app's dual model
+generations, global singletons, fragile equality, and third-party dependencies with a
+single domain model, dependency-injected `@Observable` services, and native frameworks
+only.
+
+## Requirements
+
+- **Xcode 16+** (the project uses the file-system *synchronized group* format — any file
+  added under `Literavox/` is compiled automatically, no `.pbxproj` editing needed).
+- **iOS 17+** deployment target (SwiftUI `@Observable`, StoreKit 2, async AVFoundation).
+- Set your **Signing team** and, if you like, the **bundle id** (`pl.asuri.literavox`)
+  in the target's Signing & Capabilities tab before running on device.
+
+## Architecture
+
+```
+Literavox/
+  App/          LiteravoxApp (@main) · AppModel (composition root / DI)
+  Domain/       Library · Book · Track · Bookmark · UserState · palette · StableID
+  Persistence/  AppSettings (UserDefaults) · LibraryStore · UserStateStore · JSONFileStore
+  Services/     LibraryService · LibraryScanner (actor) · ICloudFiles ·
+                AudioFileMetadata · DurationCache · GoogleBooks ·
+                SecurityScopedAccess · NetworkMonitor
+  Playback/     AudioPlayer (engine) · AudioSessionController · NowPlayingController · PlaybackSpeed
+  Features/     Onboarding · Home (filter strip, continue-listening, list, mini player) ·
+                Player (track list, scrubber, speed, bookmarks) · Library (list/add/adding books)
+  Resources/    en.lproj / pl.lproj Localizable.strings
+```
+
+Services are created once in `AppModel` and injected through the SwiftUI environment —
+no singletons. The filesystem folder is the source of truth for *content*; per-book user
+flags (favourite / finished / resume / bookmarks) live in `UserStateStore`.
+
+## What's implemented (Phase 1 + the prioritised Phase 2 items)
+
+- Library add / configure (icon + colour) / list / delete (files untouched) / reload, via
+  native `.fileImporter` and security-scoped bookmarks; open-folder-in-Files.
+- Folder scanning with `json.json` catalogue + `.info` duration sidecars; metadata resolved
+  `info.txt → ID3 (via AVFoundation) → Google Books`, written back for fast offline rescans.
+  Natural (numeric-aware) track sort; stable composite IDs.
+- AVPlayer engine: resume, ±30 s, next/prev, variable speed, auto-advance, progress saved
+  every ~5 s; Now Playing + lock-screen remote commands; background audio; audio-session
+  interruptions; next-track iCloud prefetch.
+- Home, full player, mini player, continue-listening card, onboarding.
+- Favourite / finished flags + filters; in-track bookmarks (slider menu + jump); per-track
+  iCloud state icons + on-demand download; EN/PL localization.
+
+## Deliberately deferred (spec Phases 3–4)
+
+- ZIP import pipeline (`UTType.archive` + unzip) — Phase 3.
+- StoreKit 2 tip/unlock — Phase 3 (no secret in client; on-device verification when added).
+- Cloud-provider sync beyond shared iCloud Drive folders — Phase 4 (recommended *cut*).
+
+## Notes / caveats
+
+- This was authored without a local build (no Xcode on the authoring machine). The
+  structure compiles by inspection, but expect to resolve a small number of minor compiler
+  diagnostics on first build.
+- The app icon set is an empty placeholder — drop a 1024×1024 PNG into
+  `Assets.xcassets/AppIcon.appiconset` before submitting.
+- If Polish strings don't appear, confirm `Resources/en.lproj` and `pl.lproj` are picked up
+  as localizations in the target (Xcode 16 synchronized groups normally handle `.lproj`).
+# literavox2
